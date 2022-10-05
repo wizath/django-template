@@ -1,19 +1,18 @@
-import jwt
-from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import authentication, exceptions
 
 from jwt_auth.models import User
+from jwt_auth.tokens import AccessToken
 
 
 def authenticate_credentials(token):
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY)
+        payload = AccessToken.decode(token)
     except:
         raise exceptions.AuthenticationFailed('Invalid token')
 
     try:
-        user = User.objects.get(pk=payload['id'])
+        user = User.objects.get(pk=payload.get('uid', 0))
     except ObjectDoesNotExist:
         raise exceptions.AuthenticationFailed('Wrong user credentials')
 
