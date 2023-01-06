@@ -14,6 +14,17 @@ from jwt_auth.tokens import Token, AccessToken, RefreshToken
 User = get_user_model()
 
 
+# 1. No authorization header
+# 2. Wrong authorization header length
+# 3. No token, good header
+# 4. Wrong token
+# 5. No User ID
+# 6. User is disabled
+# 7. No cookie, no token
+# 8. Wrong cookie, no token
+# 9. Good Cookie, Good Token
+# 10. Good token
+
 class TokenSecurityTests(TestCase):
     def test_jwt_token_no_algorithm_exception(self):
         now = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -110,17 +121,6 @@ class TokenSecurityTests(TestCase):
         self.assertEqual(decoded['iat'], int(now.timestamp()))
         self.assertEqual(decoded['exp'], int((now + AccessToken.expire_time).timestamp()))
 
-        # 1. No authorization header
-        # 2. Wrong authorization header length
-        # 3. No token, good header
-        # 4. Wrong token
-        # 5. No User ID
-        # 6. User is disabled
-        # 7. No cookie, no token
-        # 8. Wrong cookie, no token
-        # 9. Good Cookie, Good Token
-        # 10. Good token
-
     @mock.patch('jwt_auth.tokens.datetime')
     def test_jwt_refresh_proper_datetime(self, mocked_dt):
         now = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -132,17 +132,6 @@ class TokenSecurityTests(TestCase):
         self.assertIsNotNone(decoded)
         self.assertEqual(decoded['iat'], int(now.timestamp()))
         self.assertEqual(decoded['exp'], int((now + RefreshToken.expire_time).timestamp()))
-
-        # 1. No authorization header
-        # 2. Wrong authorization header length
-        # 3. No token, good header
-        # 4. Wrong token
-        # 5. No User ID
-        # 6. User is disabled
-        # 7. No cookie, no token
-        # 8. Wrong cookie, no token
-        # 9. Good Cookie, Good Token
-        # 10. Good token
 
     def test_jwt_refresh_proper_issuer(self):
         token = RefreshToken.encode({'uid': 1})

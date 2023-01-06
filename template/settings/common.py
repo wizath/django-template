@@ -110,10 +110,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # change default auth user class
 AUTH_USER_MODEL = 'jwt_auth.User'
+AUTHENTICATION_BACKENDS = ['jwt_auth.backends.DualCredentialBackend']
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'jwt_auth.backends.JWTAuthentication',
-        'jwt_auth.backends.JWTCookieAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+        # 'jwt_auth.backends.JWTAuthentication',
+        # 'jwt_auth.backends.JWTCookieAuthentication',
     ),
 }
