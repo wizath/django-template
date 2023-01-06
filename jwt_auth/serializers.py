@@ -2,6 +2,8 @@ import datetime
 
 from rest_framework import serializers
 from django.contrib.auth import authenticate, get_user_model
+from rest_framework.validators import UniqueValidator
+
 from jwt_auth.tokens import RefreshToken, AccessToken
 
 User = get_user_model()
@@ -32,3 +34,32 @@ class LoginSerializer(serializers.Serializer):
         data['uid'] = user.id
 
         return data
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(max_length=255, min_length=2,
+                                     validators=[UniqueValidator(queryset=User.objects.all())])
+    email = serializers.EmailField(required=True, validators=[UniqueValidator(queryset=User.objects.all())])
+    password = serializers.CharField(max_length=64, min_length=8, write_only=True)
+    first_name = serializers.CharField(max_length=255, min_length=4, required=False)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'password']
+
+    def validate(self, attrs):
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        user = User.objects.create(
+            username=validated_data.get('username'),
+            email=validated_data.get('email'),
+            first_name=validated_data.get('first_name', ''),
+        )
+
+        user.set_password(validated_data.get('password'))
+        user.generate_activation_code()
+        user.is_active = False
+        user.save()
+
+        return user
