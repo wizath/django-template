@@ -3,8 +3,11 @@ import datetime
 from rest_framework import serializers
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework.validators import UniqueValidator
+from rest_framework import authentication
+from django.utils.timezone import make_aware
 
 from jwt_auth.tokens import RefreshToken, AccessToken
+from jwt_auth.models import BlacklistedToken
 
 User = get_user_model()
 
@@ -63,3 +66,93 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+
+
+class LogoutSerializer(serializers.Serializer):
+    refresh_token_prefix = 'Token'
+    token = serializers.CharField()
+
+    def validate(self, attrs):
+        token = attrs.get('token')
+        try:
+            payload = RefreshToken.decode(token)
+        except:
+            raise serializers.ValidationError('Invalid token')
+
+        if BlacklistedToken.objects.filter(jti=payload.get('jti')).exists():
+            raise serializers.ValidationError('Token already exist in blacklist')
+
+        BlacklistedToken.objects.create(
+            token=token,
+            jti=payload.get('jti'),
+            user_id=payload.get('uid'),
+            created_at=make_aware(datetime.datetime.fromtimestamp(payload.get('iat'))),
+            expires_at=make_aware(datetime.datetime.fromtimestamp(payload.get('exp')))
+        )
+
+        return attrs
+
+
+class AccessTokenSerializer(serializers.Serializer):
+    refresh_token_prefix = 'Token'
+    token = serializers.CharField()
+
+    def validate(self, data):
+        token = data.get('token')
+        try:
+            payload = RefreshToken.decode(token)
+        except:
+            raise serializers.ValidationError('Invalid token')
+
+        request = self.context.get("request")
+        user = request.user
+
+        if user.id != payload.get('uid'):
+            raise serializers.ValidationError('User ID mismatch')
+
+        access_token = AccessToken.encode({'uid': user.id})
+        data['access_token'] = access_token
+        data['access_expire'] = datetime.datetime.utcnow() + AccessToken.expire_time
+        data['uid'] = user.id
+
+        return data
+
+
+class RefreshTokenSerializer(serializers.Serializer):
+    refresh_token_prefix = 'Token'
+    token = serializers.CharField()
+
+    def validate(self, data):
+        token = data.get('token')
+        try:
+            payload = RefreshToken.decode(token)
+        except:
+            raise serializers.ValidationError('Invalid token')
+
+        # blacklist old refresh token
+        if BlacklistedToken.objects.filter(jti=payload.get('jti')).exists():
+            raise serializers.ValidationError('Token already exist in blacklist')
+
+        BlacklistedToken.objects.create(
+            token=token,
+            jti=payload.get('jti'),
+            user_id=payload.get('uid'),
+            created_at=make_aware(datetime.datetime.fromtimestamp(payload.get('iat'))),
+            expires_at=make_aware(datetime.datetime.fromtimestamp(payload.get('exp')))
+        )
+
+        request = self.context.get("request")
+        user = request.user
+
+        if user.id != payload.get('uid'):
+            raise serializers.ValidationError('User ID mismatch')
+
+        access_token = AccessToken.encode({'uid': user.id})
+        refresh_token = RefreshToken.encode({'uid': user.id})
+        data['access_token'] = access_token
+        data['refresh_token'] = refresh_token
+        data['access_expire'] = datetime.datetime.utcnow() + AccessToken.expire_time
+        data['refresh_expire'] = datetime.datetime.utcnow() + RefreshToken.expire_time
+        data['uid'] = user.id
+
+        return data

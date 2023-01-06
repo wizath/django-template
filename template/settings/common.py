@@ -114,8 +114,7 @@ AUTHENTICATION_BACKENDS = ['jwt_auth.backends.DualCredentialBackend']
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.BasicAuthentication',
-        # 'jwt_auth.backends.JWTAuthentication',
-        # 'jwt_auth.backends.JWTCookieAuthentication',
+        'jwt_auth.backends.JWTAuthentication',
+        'jwt_auth.backends.JWTCookieAuthentication',
     ),
 }

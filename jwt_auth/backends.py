@@ -3,47 +3,76 @@ from rest_framework import authentication, exceptions
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from jwt_auth.models import User
-from jwt_auth.tokens import AccessToken
+from jwt_auth.models import User, BlacklistedToken
+from jwt_auth.tokens import AccessToken, RefreshToken
 
 UserModel = get_user_model()
 
 
-def authenticate_credentials(token):
+def get_authentication_token(prefix, request):
+    auth_header = authentication.get_authorization_header(request).split()
+    auth_header_prefix = prefix.lower()
+
+    # Wrong header specs (empty, wrong components)
+    if not auth_header or len(auth_header) == 1 or len(auth_header) > 2:
+        return None
+
+    prefix = auth_header[0].decode('utf-8')
+    token = auth_header[1].decode('utf-8')
+
+    # check for 'Authorization: Token' prefix
+    if prefix.lower() != auth_header_prefix:
+        return None
+
+    return token
+
+
+def authenticate_credentials(token, token_class=AccessToken):
     try:
-        payload = AccessToken.decode(token)
+        payload = token_class.decode(token)
     except:
         raise exceptions.AuthenticationFailed('Invalid token')
 
     try:
-        user = User.objects.get(pk=payload.get('uid', 0))
+        user = User.objects.get(pk=payload.get('uid'))
     except ObjectDoesNotExist:
         raise exceptions.AuthenticationFailed('Wrong user credentials')
 
     if not user.is_active:
         raise exceptions.AuthenticationFailed('User is not active')
 
+    if token_class == RefreshToken:
+        if BlacklistedToken.objects.filter(jti=payload.get('jti')).exists():
+            raise exceptions.AuthenticationFailed('Token is blacklisted')
+
     return user, token
 
 
-class JWTAuthentication(authentication.BaseAuthentication):
-    auth_header_prefix = 'Token'
+class JWTRefreshAuthentication(authentication.BaseAuthentication):
+    auth_header_prefix = 'Bearer'
 
     def authenticate(self, request):
-        auth_header = authentication.get_authorization_header(request).split()
-        auth_header_prefix = self.auth_header_prefix.lower()
+        token = get_authentication_token(self.auth_header_prefix, request)
+        return authenticate_credentials(token, token_class=RefreshToken)
 
-        # Wrong header specs (empty, wrong components)
-        if not auth_header or len(auth_header) == 1 or len(auth_header) > 2:
+
+class JWTRefreshCookieAuthentication(authentication.BaseAuthentication):
+    auth_cookie_prefix = 'refresh_token'
+
+    def authenticate(self, request):
+        raw_token = request.COOKIES.get(self.auth_cookie_prefix, None)
+
+        if raw_token is None:
             return None
 
-        prefix = auth_header[0].decode('utf-8')
-        token = auth_header[1].decode('utf-8')
+        return authenticate_credentials(raw_token, token_class=RefreshToken)
 
-        # check for 'Authorization: Token' prefix
-        if prefix.lower() != auth_header_prefix:
-            return None
 
+class JWTAuthentication(authentication.BaseAuthentication):
+    auth_header_prefix = 'Bearer'
+
+    def authenticate(self, request):
+        token = get_authentication_token(self.auth_header_prefix, request)
         return authenticate_credentials(token)
 
 
