@@ -1,9 +1,10 @@
-from django.core.exceptions import ObjectDoesNotExist
-from rest_framework import authentication, exceptions
-from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
+from django.contrib.auth.backends import ModelBackend
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
-from jwt_auth.models import User, BlacklistedToken
+from rest_framework import authentication, exceptions
+
+from jwt_auth.models import User, UserRefreshToken
 from jwt_auth.tokens import AccessToken, RefreshToken
 
 UserModel = get_user_model()
@@ -42,7 +43,7 @@ def authenticate_credentials(token, token_class=AccessToken):
         raise exceptions.AuthenticationFailed('User is not active')
 
     if token_class == RefreshToken:
-        if BlacklistedToken.objects.filter(jti=payload.get('jti')).exists():
+        if UserRefreshToken.objects.filter(jti=payload.get('jti'), blacklisted=True).exists():
             raise exceptions.AuthenticationFailed('Token is blacklisted')
 
     return user, token
