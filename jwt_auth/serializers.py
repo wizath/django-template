@@ -1,3 +1,5 @@
+import datetime
+
 from rest_framework import serializers
 from django.contrib.auth import authenticate, get_user_model
 from jwt_auth.tokens import RefreshToken, AccessToken
@@ -25,5 +27,8 @@ class LoginSerializer(serializers.Serializer):
         refresh_token = RefreshToken.encode({'uid': user.id})
         data['access_token'] = access_token
         data['refresh_token'] = refresh_token
+        data['access_expire'] = datetime.datetime.utcnow() + AccessToken.expire_time
+        data['refresh_expire'] = datetime.datetime.utcnow() + RefreshToken.expire_time
+        data['uid'] = user.id
 
         return data

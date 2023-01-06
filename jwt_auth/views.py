@@ -11,9 +11,33 @@ class LoginAPIView(APIView):
     serializer_class = LoginSerializer
 
     def post(self, request):
-        serializer = LoginSerializer(data=request.data, context={'request': request})
+        serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        return Response({'status': 'ok'}, status=status.HTTP_200_OK)
+
+        serializer_data = serializer.validated_data
+        access_expiration = serializer_data['access_expire']
+        refresh_expiration = serializer_data['refresh_expire']
+
+        response_data = {
+            'uid': serializer_data['uid'],
+            'access_token': serializer_data['access_token'],
+            'refresh_token': serializer_data['refresh_token'],
+            'access_expire': int(access_expiration.timestamp()),
+            'refresh_expire': int(refresh_expiration.timestamp())
+        }
+
+        response = Response(response_data, status=status.HTTP_200_OK)
+        response.set_cookie('access_token',
+                            serializer_data['access_token'],
+                            expires=access_expiration,
+                            httponly=True)
+
+        response.set_cookie('refresh_token',
+                            serializer_data['refresh_token'],
+                            expires=refresh_expiration,
+                            httponly=True)
+
+        return response
 
 
 class VerifyAPIView(APIView):
