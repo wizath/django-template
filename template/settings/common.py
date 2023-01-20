@@ -36,7 +36,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'jwt_auth'
+    'authentication',
+    'user',
 ]
 
 MIDDLEWARE = [
@@ -109,12 +110,12 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # change default auth user class
-AUTH_USER_MODEL = 'jwt_auth.User'
-AUTHENTICATION_BACKENDS = ['jwt_auth.backends.DualCredentialBackend']
+AUTH_USER_MODEL = 'user.User'
+AUTHENTICATION_BACKENDS = ['authentication.backends.DualCredentialBackend']
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'jwt_auth.backends.JWTAuthentication',
-        'jwt_auth.backends.JWTCookieAuthentication',
+        'authentication.backends.JWTCookieAuthentication',
+        'authentication.backends.JWTAuthentication',
     ),
 }

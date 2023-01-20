@@ -4,8 +4,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from rest_framework import authentication, exceptions
 
-from jwt_auth.models import User, UserRefreshToken
-from jwt_auth.tokens import AccessToken, RefreshToken
+from user.models import User
+from authentication.models import UserRefreshToken
+from authentication.tokens import AccessToken, RefreshToken
 
 UserModel = get_user_model()
 
@@ -54,7 +55,7 @@ class JWTRefreshAuthentication(authentication.BaseAuthentication):
 
     def authenticate(self, request):
         token = get_authentication_token(self.auth_header_prefix, request)
-        return authenticate_credentials(token, token_class=RefreshToken)
+        return authenticate_credentials(token, token_class=RefreshToken)  # noqa
 
 
 class JWTRefreshCookieAuthentication(authentication.BaseAuthentication):
@@ -66,7 +67,7 @@ class JWTRefreshCookieAuthentication(authentication.BaseAuthentication):
         if raw_token is None:
             return None
 
-        return authenticate_credentials(raw_token, token_class=RefreshToken)
+        return authenticate_credentials(raw_token, token_class=RefreshToken)  # noqa
 
 
 class JWTAuthentication(authentication.BaseAuthentication):
@@ -102,3 +103,5 @@ class DualCredentialBackend(ModelBackend):
 
         if user.check_password(password) and self.user_can_authenticate(user):
             return user
+
+        return None

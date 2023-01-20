@@ -4,9 +4,9 @@ from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from jwt_auth.models import UserRefreshToken
-from jwt_auth.tokens import RefreshToken, AccessToken
-from jwt_auth.utils import get_client_ip
+from authentication.models import UserRefreshToken
+from authentication.tokens import RefreshToken, AccessToken
+from authentication.utils import get_client_ip
 
 User = get_user_model()
 
