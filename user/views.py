@@ -6,7 +6,35 @@ from rest_framework.views import APIView
 
 from authentication.backends import JWTRefreshAuthentication, JWTRefreshCookieAuthentication
 from authentication.backends import get_authentication_token
-from user.serializers import LoginSerializer, RegisterSerializer, LogoutSerializer
+from user.serializers import LoginSerializer, RegisterSerializer, LogoutSerializer, PasswordResetObtainTokenSerializer, \
+    PasswordResetTokenSerializer
+from django.contrib.auth import settings
+
+
+class ResetPasswordTokenView(APIView):
+    serializer_class = PasswordResetObtainTokenSerializer
+    permission_classes = ()
+    authentication_classes = ()
+
+    def post(self, request):
+        serializer = PasswordResetObtainTokenSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            return Response({"status": "ok"}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResetPasswordView(APIView):
+    serializer_class = PasswordResetTokenSerializer
+    permission_classes = ()
+    authentication_classes = ()
+
+    def post(self, request):
+        serializer = PasswordResetTokenSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            return Response({"status": "ok"}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LogoutAPIView(APIView):
@@ -68,13 +96,13 @@ class LoginAPIView(APIView):
         response.set_cookie('access_token',
                             serializer_data['access_token'],
                             expires=access_expiration,
-                            secure=True,
+                            secure=not settings.DEBUG,  # disable in debug mode
                             httponly=True)
 
         response.set_cookie('refresh_token',
                             serializer_data['refresh_token'],
                             expires=refresh_expiration,
-                            secure=True, # todo: set if not debug mode
+                            secure=not settings.DEBUG,  # disable in debug mode
                             httponly=True)
 
         return response

@@ -14,14 +14,15 @@ class UserRefreshToken(models.Model):
     token = models.TextField()
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     jti = models.CharField(unique=True, max_length=255)
-    created_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField()
     expires_at = models.DateTimeField()
     blacklisted_at = models.DateTimeField(blank=True, null=True)
     blacklisted = models.BooleanField(default=False)
     ip_address = models.CharField(blank=True, max_length=39)
+    user_agent = models.CharField(max_length=256, default="", blank=True)
 
     @staticmethod
-    def from_token(token, ip_address=None):
+    def from_token(token, ip_address=None, user_agent=None):
         payload = RefreshToken.decode(token)
         return UserRefreshToken.objects.create(
             token=token,

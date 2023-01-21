@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from authentication.models import UserRefreshToken
 from authentication.tokens import RefreshToken, AccessToken
-from authentication.utils import get_client_ip
+from authentication.utils import get_client_ip, get_user_agent
 
 User = get_user_model()
 
@@ -54,6 +54,7 @@ class RefreshTokenSerializer(serializers.Serializer):
         request = self.context.get("request")
         user = request.user
         ip_address = get_client_ip(request)
+        user_agent = get_user_agent(request)
 
         if user.id != payload.get('uid'):
             raise serializers.ValidationError('User ID mismatch')
@@ -62,7 +63,7 @@ class RefreshTokenSerializer(serializers.Serializer):
         refresh_token = RefreshToken.encode({'uid': user.id})
 
         # create refresh token db record
-        UserRefreshToken.from_token(refresh_token, ip_address)
+        UserRefreshToken.from_token(refresh_token, ip_address, user_agent)
 
         data['access_token'] = access_token
         data['refresh_token'] = refresh_token
