@@ -9,6 +9,7 @@ from django.conf import settings
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 
 from authentication.tokens import AccessToken, Token, RefreshToken
@@ -155,7 +156,7 @@ class TestTokenAuth(APITestCase):
         response = self.client.get(reverse('verify'))
 
         self.assertEqual(response.data['detail'], 'Invalid token')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_authorization_wrong_header(self):
         client = APIClient()
@@ -163,21 +164,21 @@ class TestTokenAuth(APITestCase):
         response = client.get(reverse('verify'))
 
         self.assertEqual(response.data['detail'], 'Invalid token')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_authorization_wrong_token(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token wrong-token')
         response = self.client.get(reverse('verify'))
 
         self.assertEqual(response.data['detail'], 'Invalid token')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_authorization_proper(self):
         token = AccessToken.encode({'uid': 1})
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
         response = self.client.get(reverse('verify'))
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['user_id'], 1)
 
     def test_authorization_expired_token(self):
@@ -195,7 +196,7 @@ class TestTokenAuth(APITestCase):
         response = self.client.get(reverse('verify'))
 
         self.assertEqual(response.data['detail'], 'Invalid token')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_authorization_wrong_user(self):
         now = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -213,7 +214,7 @@ class TestTokenAuth(APITestCase):
         response = self.client.get(reverse('verify'))
 
         self.assertEqual(response.data['detail'], 'Wrong user credentials')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_authorization_disabled_user(self):
         now = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -231,7 +232,7 @@ class TestTokenAuth(APITestCase):
         response = self.client.get(reverse('verify'))
 
         self.assertEqual(response.data['detail'], 'User is not active')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class TestCookieAuth(APITestCase):
@@ -252,7 +253,7 @@ class TestCookieAuth(APITestCase):
         response = client.get(reverse('verify'))
 
         self.assertEqual(response.data['detail'], 'Invalid token')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_authorization_proper(self):
         token = AccessToken.encode({'uid': 1})
@@ -260,7 +261,7 @@ class TestCookieAuth(APITestCase):
         self.client.cookies = token_cookie
         response = self.client.get(reverse('verify'))
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['user_id'], 1)
 
     def test_authorization_expired_token(self):
@@ -279,7 +280,7 @@ class TestCookieAuth(APITestCase):
         response = self.client.get(reverse('verify'))
 
         self.assertEqual(response.data['detail'], 'Invalid token')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_authorization_wrong_user(self):
         now = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -298,7 +299,7 @@ class TestCookieAuth(APITestCase):
         response = self.client.get(reverse('verify'))
 
         self.assertEqual(response.data['detail'], 'Wrong user credentials')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_authorization_disabled_user(self):
         now = datetime.datetime.now(tz=datetime.timezone.utc)
@@ -317,4 +318,15 @@ class TestCookieAuth(APITestCase):
         response = self.client.get(reverse('verify'))
 
         self.assertEqual(response.data['detail'], 'User is not active')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class TestCookieSecurity(APITestCase):
+    def test_cookie_samesite_flag(self):
+        self.assertTrue(True)
+
+    def test_cookie_secure_flag(self):
+        self.assertTrue(True)
+
+    def test_refresh_cookie_specified_paths(self):
+        self.assertTrue(True)

@@ -1,3 +1,4 @@
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -5,13 +6,13 @@ from rest_framework.views import APIView
 
 from authentication.backends import JWTRefreshAuthentication, JWTRefreshCookieAuthentication
 from authentication.backends import get_authentication_token
-from authentication.serializers import LoginSerializer, RegisterSerializer, LogoutSerializer
+from user.serializers import LoginSerializer, RegisterSerializer, LogoutSerializer
 
 
 class LogoutAPIView(APIView):
     serializer_class = LogoutSerializer
     permission_classes = (IsAuthenticated,)
-    authentication_classes = (JWTRefreshAuthentication, JWTRefreshCookieAuthentication)
+    authentication_classes = (JWTRefreshCookieAuthentication, JWTRefreshAuthentication)
 
     def post(self, request):
         cookie_token = request.COOKIES.get('refresh_token', None)
@@ -20,7 +21,7 @@ class LogoutAPIView(APIView):
 
         serializer = LogoutSerializer(data={'token': token})
         if serializer.is_valid():
-            response = Response({}, status=status.HTTP_201_CREATED)
+            response = Response({}, status=status.HTTP_200_OK)
             response.delete_cookie('access_token')
             response.delete_cookie('refresh_token')
             return response
@@ -37,7 +38,7 @@ class RegisterAPIView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.validated_data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -67,11 +68,13 @@ class LoginAPIView(APIView):
         response.set_cookie('access_token',
                             serializer_data['access_token'],
                             expires=access_expiration,
+                            secure=True,
                             httponly=True)
 
         response.set_cookie('refresh_token',
                             serializer_data['refresh_token'],
                             expires=refresh_expiration,
+                            secure=True, # todo: set if not debug mode
                             httponly=True)
 
         return response
