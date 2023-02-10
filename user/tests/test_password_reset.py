@@ -23,8 +23,10 @@ class TestPasswordResetAPI(APITestCase):
 
     def test_reset_wrong_email(self):
         response = self.client.post(reverse('password_reset_request'), {'email': 'noexist@test.com'})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue('Invalid email address' in response.data['non_field_errors'])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # self.assertTrue('Invalid email address' in response.data['non_field_errors'])
 
     @mock.patch('user.models.reset_password_token_created.send')
     def test_proper_reset_token_request(self, mock_reset_password_token_created):
@@ -32,7 +34,7 @@ class TestPasswordResetAPI(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(mock_reset_password_token_created.called)
 
-        last_reset_password_token = mock_reset_password_token_created.call_args[1]['reset_password_token']
+        last_reset_password_token = mock_reset_password_token_created.call_args[1]['instance']
         token = ResetPasswordToken.objects.first()
         self.assertEqual(token.id, last_reset_password_token.id)
         self.assertEqual(token.token, last_reset_password_token.token)
@@ -139,6 +141,7 @@ class TestPasswordResetEmail(APITestCase):
 
         user = User(username='testuser', email='test@test.com')
         user.set_password('testpassword')
+        user.is_active = True
         user.save()
 
         mail.outbox = []

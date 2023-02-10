@@ -18,10 +18,17 @@ class ResetPasswordTokenView(APIView):
 
     def post(self, request):
         serializer = PasswordResetObtainTokenSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            return Response({"status": "ok"}, status=status.HTTP_200_OK)
+        serializer.is_valid()
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # version with errors
+        # serializer = PasswordResetObtainTokenSerializer(data=request.data, context={'request': request})
+        # if serializer.is_valid():
+        #     return Response({"status": "ok"}, status=status.HTTP_200_OK)
+        #
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # silence errors to avoid email exfiltration
+        return Response({"status": "ok"}, status=status.HTTP_200_OK)
 
 
 class ResetPasswordView(APIView):

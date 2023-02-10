@@ -13,7 +13,7 @@ class TestActivateAPI(APITestCase):
         user = User(username='testuser', email='test@test.com')
         user.set_password('testpassword')
         user.is_active = False
-        user.generate_activation_code()
+        user.activation_code = User.generate_activation_code()
         user.save()
 
     def test_no_credentials(self):
