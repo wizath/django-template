@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from authentication.backends import JWTRefreshAuthentication, JWTRefreshCookieAuthentication
 from authentication.backends import get_authentication_token
 from user.serializers import LoginSerializer, RegisterSerializer, LogoutSerializer, PasswordResetObtainTokenSerializer, \
-    PasswordResetTokenSerializer
+    PasswordResetTokenSerializer, ActivateSerializer
 from django.contrib.auth import settings
 
 
@@ -37,7 +37,7 @@ class ResetPasswordView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LogoutAPIView(APIView):
+class LogoutView(APIView):
     serializer_class = LogoutSerializer
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTRefreshCookieAuthentication, JWTRefreshAuthentication)
@@ -57,7 +57,7 @@ class LogoutAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RegisterAPIView(APIView):
+class RegisterView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = RegisterSerializer
     authentication_classes = ()
@@ -71,7 +71,19 @@ class RegisterAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LoginAPIView(APIView):
+class ActivateView(APIView):
+    permission_classes = (AllowAny,)
+    serializer_class = ActivateSerializer
+    authentication_classes = ()
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        return Response({'uid': serializer.validated_data['uid']}, status=status.HTTP_200_OK)
+
+
+class LoginView(APIView):
     permission_classes = (AllowAny,)
     serializer_class = LoginSerializer
     authentication_classes = ()

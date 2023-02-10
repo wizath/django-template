@@ -323,10 +323,13 @@ class TestCookieAuth(APITestCase):
 
 class TestCookieSecurity(APITestCase):
     def test_cookie_samesite_flag(self):
+        # todo
         self.assertTrue(True)
 
     def test_cookie_secure_flag(self):
+        # todo
         self.assertTrue(True)
 
     def test_refresh_cookie_specified_paths(self):
+        # todo
         self.assertTrue(True)

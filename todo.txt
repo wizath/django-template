@@ -1,2 +1,5 @@
 # fix RuntimeWarning: DateTimeField ResetPasswordToken.expires_at received a naive datetime (2023-01-22 13:54:54.185066) while time zone support is active.
 # make aware to every datetime object in project
+
+# account activate endpoint (after registration)
+# make sure password reset always returns 200 OK to avoid email scraping

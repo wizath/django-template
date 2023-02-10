@@ -44,7 +44,7 @@ class PasswordResetObtainTokenSerializer(serializers.Serializer):
                 created_at=now,
                 expires_at=now + datetime.timedelta(hours=24)
             )
-        reset_password_token_created.send(sender=self.__class__, instance=self, reset_password_token=token)
+        reset_password_token_created.send(sender=self.__class__, instance=token)
 
         return attrs
 
@@ -142,14 +142,39 @@ class RegisterSerializer(serializers.ModelSerializer):
             username=validated_data.get('username'),
             email=validated_data.get('email'),
             first_name=validated_data.get('first_name', ''),
+            activation_code=User.generate_activation_code(),
+            is_active=False,
         )
 
         user.set_password(validated_data.get('password'))
-        user.generate_activation_code()
-        user.is_active = False
         user.save()
 
         return user
+
+
+class ActivateSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+    def validate(self, attrs):
+        token = attrs.get('token')
+
+        if len(token) != 6:
+            raise serializers.ValidationError("Invalid token")
+
+        user = User.objects.filter(activation_code=token).first()
+        if not user:
+            raise serializers.ValidationError("Invalid token")
+
+        if user.is_active:
+            raise serializers.ValidationError("User is already active")
+
+        # set user as active
+        user.is_active = True
+        user.save()
+
+        attrs['uid'] = user.id
+
+        return attrs
 
 
 class LogoutSerializer(serializers.Serializer):
